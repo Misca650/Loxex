@@ -600,7 +600,7 @@
             }, 3000);
         }
 
-        const url = "http://localhost:52341/";
+        const url = "http://192.168.1.106:52341/";
 
         let lastWS = null;
         let lastJP = null;
@@ -608,7 +608,7 @@
         let lastGRAV = null;
 
         function sendLua(script){
-            fetch("http://localhost:52341/lua", {
+            fetch("http://192.168.1.106:52341/lua", {
                 method: "POST",
                 headers: {
                     "Content-Type": "text/plain"
