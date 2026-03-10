@@ -505,29 +505,34 @@
                             <span>WalkSpeed</span>
                             <span class="tweak-val" id="wsVal">16</span>
                         </div>
-                        <input type="range" min="16" max="200" value="16" oninput="document.getElementById('wsVal').innerText = this.value">
+                        <input type="range" min="16" max="200" value="16" oninput="document.getElementById('wsVal').innerText = this.value; applyTweak('walkspeed', this.value)">
                     </div>
                     <div class="tweak-item">
                         <div class="tweak-label">
                             <span>JumpPower</span>
                             <span class="tweak-val" id="jpVal">50</span>
                         </div>
-                        <input type="range" min="50" max="300" value="50" oninput="document.getElementById('jpVal').innerText = this.value">
+                        <input type="range" min="50" max="300" value="50" oninput="document.getElementById('jpVal').innerText = this.value; applyTweak('jumppower', this.value)">
                     </div>
                     <div class="tweak-item">
                         <div class="tweak-label">
                             <span>Field of View</span>
                             <span class="tweak-val" id="fovVal">70</span>
                         </div>
-                        <input type="range" min="70" max="120" value="70" oninput="document.getElementById('fovVal').innerText = this.value">
+                        <input type="range" min="70" max="120" value="70" oninput="document.getElementById('fovVal').innerText = this.value; applyTweak('fov', this.value)">
                     </div>
                     <div class="tweak-item">
                         <div class="tweak-label">
                             <span>Gravity</span>
                             <span class="tweak-val" id="gravVal">196.2</span>
                         </div>
-                        <input type="range" min="0" max="196" value="196" oninput="document.getElementById('gravVal').innerText = this.value">
+                        <input type="range" min="0" max="196" value="196" oninput="document.getElementById('gravVal').innerText = this.value; applyTweak('gravity', this.value)">
                     </div>
+
+                    <button class="btn-exec" onclick="checkStatus()">
+                        <i class="fa-solid fa-play"></i> EXECUTE
+                    </button>
+
                 </div>
             </div>
 
@@ -597,21 +602,73 @@
 
         const url = "http://localhost:52341/";
 
+        let lastWS = null;
+        let lastJP = null;
+        let lastFOV = null;
+        let lastGRAV = null;
+
+        function sendLua(script){
+            fetch("http://localhost:52341/lua", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain"
+                },
+                body: script
+            });
+        }
+
+        function checkStatus(){
+        
+            const ws = document.getElementById('wsVal').innerText;
+            const jp = document.getElementById('jpVal').innerText;
+            const fov = document.getElementById('fovVal').innerText;
+            const grav = document.getElementById('gravVal').innerText;
+        
+            if(ws !== lastWS){
+                sendLua(`
+        local Character = game.Players.LocalPlayer.Character
+        local Humanoid = Character:FindFirstChild("Humanoid")
+        Humanoid.WalkSpeed = ${ws}
+        `);
+                lastWS = ws;
+            }
+        
+            if(jp !== lastJP){
+                sendLua(`
+        local Character = game.Players.LocalPlayer.Character
+        local Humanoid = Character:FindFirstChild("Humanoid")
+        Humanoid.JumpPower = ${jp}
+        `);
+                lastJP = jp;
+            }
+        
+            if(fov !== lastFOV){
+                sendLua(`workspace.CurrentCamera.FieldOfView = ${fov}`);
+                lastFOV = fov;
+            }
+        
+            if(grav !== lastGRAV){
+                sendLua(`workspace.Gravity = ${grav}`);
+                lastGRAV = grav;
+            }
+        }
+
         function verifyKey() {
             const input = document.getElementById('keyInput');
             const card = document.getElementById('authCard');
             const overlay = document.getElementById('auth-overlay');
             const app = document.getElementById('main-app');
                 
-            fetch(url + "login", {
+            fetch(url + "key", {
                 method: "POST",
                 headers: {
                     "Content-Type": "text/plain"
                 },
                 body: input.value
             })
-            .then(response => response.json())
+            .then(res => res.text())
             .then(data => {
+                console.log(data)
             
                 if (data === "VALID" || data.status === "VALID") {
                 
@@ -664,22 +721,27 @@
                 return;
             }
 
-            fetch(url + "lua", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "text/plain"
-                },
-                body: input.value
-            })
-            
             text.innerText = "EXECUTING...";
             dot.classList.add('active');
-            
-            setTimeout(() => {
+
+            sendLua(input)
+            .then(response => response.json())
+            .then(data => {
                 text.innerText = "READY";
                 dot.classList.remove('active');
-                createToast('Success', 'Script executed perfectly.', true);
-            }, 800);
+                
+                if (data === "SUCCESS" || data.status === "SUCCESS") {
+                    createToast('Success', 'Script executed perfectly.', true);
+                } else {
+                    createToast('Error', 'Script execution failed.', false);
+                }
+            })
+            .catch(err => {
+                console.error("Request failed:", err);
+                text.innerText = "READY";
+                dot.classList.remove('active');
+                createToast('Error', 'Server not responding.', false);
+            });
         }
 
         window.onload = () => {
