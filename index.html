@@ -479,6 +479,9 @@
             <div class="auth-input-group">
                 <input type="password" id="keyInput" class="auth-input" placeholder="Enter Access Key" autocomplete="off">
             </div>
+            <div class="auth-input-group">
+                <input type="password" id="keyInput2" class="auth-input" placeholder="Enter Local IP" autocomplete="off">
+            </div>
             <button class="btn-main" onclick="verifyKey()">
                 <i class="fa-solid fa-unlock-keyhole"></i> CHECK
             </button>
@@ -599,8 +602,8 @@
                 setTimeout(() => toast.remove(), 500);
             }, 3000);
         }
-
-        const url = "http://192.168.1.106:52341/";
+        
+        let url = null;
 
         let lastWS = null;
         let lastJP = null;
@@ -608,7 +611,7 @@
         let lastGRAV = null;
 
         function sendLua(script){
-            fetch("http://192.168.1.106:52341/lua", {
+            fetch(`${url}/lua`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "text/plain"
@@ -655,11 +658,14 @@
 
         function verifyKey() {
             const input = document.getElementById('keyInput');
+            const input2 = document.getElementById('keyInput2');
             const card = document.getElementById('authCard');
             const overlay = document.getElementById('auth-overlay');
             const app = document.getElementById('main-app');
+
+            url = `http://${input2.value}:52341`;
                 
-            fetch(url + "key", {
+            fetch(url + "/key", {
                 method: "POST",
                 headers: {
                     "Content-Type": "text/plain"
